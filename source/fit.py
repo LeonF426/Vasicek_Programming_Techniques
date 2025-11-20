@@ -1,81 +1,97 @@
+# Fast package to handle array wide computations:
 import numpy as np
+
+# Import enhanced type checking functionalities for arrays to use as input datatype for observations:
+from numpy.typing import NDArray
+
+# Package that we will use for minimization:
 import scipy
+
+# Package for data structures and reading/saving data:
 import pandas as pd
 
-data = pd.read_csv("../data/dgs10_clean.csv", index_col="date")
-# print(data)
 
-# define day-delta on the basis of which we will simulate the SDE dynamics (discretization step):
-dt = 1 / 252
-
-"""
-As described in the original paper from Vasicek (AN EQUILIBRIUM CHARACTERIZATION OF THE TERM STRUCTURE - 1977) EQ (24):
-  dr = alpha(gamma-r)dt + pdW_t
-  with alpha > 0. This is a specific OU (Ornstein Uhlenbeck) process which has an exact (and strong) solution.
-"""
-
-"""
-We will fit these parameters using MLE (Maximum Likelihood Estimator), thus searching for parameters
-that explain the observed data with the highest probability. We therefore define the closed form for the
-negative likelihood for our specific case and minimize using the scipy library. 
-We will use scipy.optimize.minimize:
-    https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html
-"""
-
-r = data.values  # array of observed short-rate proxy
-
-
-def NegLLVasicek(params: tuple, r, dt: float) -> float:
-    # params are in unconstrained space? We'll impose constraints in optimizer
+def NegLLVasicek(params: tuple, r: NDArray[np.float64], dt: float) -> float:
+    """Function that evaluates the negative log-likelihood function specifically in our underlying Vasicek model."""
+    # Assign just as we described above
     a, b, sigma = params
-    # if a <= 0 or sigma <= 0:
-    #     return 1e10
+
+    # This term is observed multiple times, compute once for efficiency
     phi = np.exp(-a * dt)
+
+    # Compute variance (independant for r!)
     var = (sigma**2 / (2 * a)) * (1 - phi**2)
-    # compute conditional means
+
+    # compute conditional means (for the entire array! mu is an array with the conditional means!)
     mu = phi * r[:-1] + (1 - phi) * b
-    # gaussian log-likelihood
+
+    # gaussian log-likelihood (just as term above but taking the sum directly)
     ll = -0.5 * np.sum(np.log(2 * np.pi * var) + ((r[1:] - mu) ** 2) / var)
     return -ll  # negative log-likelihood
 
 
-def PreFit():
-    return None
+"""
+In contrast to the jupyter notebook, we will wrap the remaining functionalities into a function such that
+it can be imported into other python files. 
+"""
 
 
-def MLEFit():
-    return None
+def MLEFit(
+    path: str = "../data/dgs10_clean.csv",
+    dt: float = 1 / 252,
+    start=np.array([1, 1, 1]),
+    bounds: list = [
+        (1e-9, 10.0),  # bounds for a --> a > 0
+        (None, None),  # bounds for b --> unconstrained
+        (1e-9, 10.0),  # bounds for sigma --> sigma > 0
+    ],
+):
+    """
+    This function has the exact same funcitonalities as the code shown in the MLE_Fit.ipynb notebook.
+    We just wrap it into a function such that it can be imported in other python files. We set the values we use
+    as standard inputs but they can be changed if needed."""
+
+    # Use pandas functionality to read in the cleaned dgs10 data:
+    data = pd.read_csv(filepath_or_buffer=path, index_col="date")
+
+    # Print first 10 rows to take a look:
+    print(data.head(10))
+
+    # define day-delta on the basis of which we will simulate the SDE dynamics (discretization step assumed to be average business day per year):
+    # dt = 1 / 252 HERE NOW AS INPUT!
+
+    # Extract the values of the 'data' Dataframe into an array (DataFrame method returns np.array)
+    r = data.values
+    print(type(r))
+
+    # # Some starting parameters
+    # start = np.array([1, 1, 1]) HERE NOW AS INPUT!
+
+    # Justification for these bounds are given by the parameter description in the introduction to this model
+    # bnds = [
+    #     (1e-9, 10.0),  # bounds for a --> a > 0
+    #     (None, None),  # bounds for b --> unconstrained
+    #     (1e-9, 10.0),  # bounds for sigma --> sigma > 0
+    # ]  NOW INPUT!
+
+    # This will return an 'OptimizeResult' object that has multiple attributes that we call later
+    opt = scipy.optimize.minimize(
+        fun=NegLLVasicek, x0=start, args=(r, dt), method="L-BFGS-B", bounds=bounds
+    )
+
+    # opt.success is an attribute that signals if the procedure has run without errors
+    if not opt.success:
+        raise RuntimeError("MLE optimization failed: " + opt.message)
+
+    # Multi-assignment from opt.x attribute containing optimization result array + opt.fun gives log-likelihood function value for optimized values
+    a_mle, b_mle, sigma_mle = opt.x
+    print(
+        "MLE estimates: a = %.6g, b = %.6g, sigma = %.6g, fun-value = %.6g"
+        % (a_mle, b_mle, sigma_mle, opt.fun)
+    )
+
+    return (a_mle, b_mle, sigma_mle, opt.fun)
 
 
-# initial guess from OLS AR(1) quick method
-# r_{t+1} = alpha + phi*r_t + eps
-# X = np.column_stack([np.ones(len(r) - 1), r[:-1]])
-#
-# Y = r[1:]
-# beta = np.linalg.lstsq(X, Y, rcond=None)[0]
-# alpha_hat, phi_hat = beta[0], beta[1]
-# a_init = -np.log(np.clip(phi_hat, 1e-8, 0.9999)) / dt
-# b_init = alpha_hat / (1 - phi_hat)
-# resid = Y - X.dot(beta)
-# var_eps = resid.var(ddof=2)
-# sigma_init = np.sqrt(2 * a_init * var_eps / (1 - np.exp(-2 * a_init * dt)))
-#
-# start = np.array([a_init[0], b_init[0], sigma_init[0]])
-start = np.array([1, 1, 1])
-print(start)
-# bounds: a>1e-6, sigma>1e-8, b unconstrained (but sensible)
-bnds = [(1e-6, 5.0), (None, None), (1e-8, 2.0)]
-
-bnds = [(1e-9, 10.0), (None, None), (1e-9, 10.0)]
-
-opt = scipy.optimize.minimize(
-    NegLLVasicek, start, args=(r, dt), method="L-BFGS-B", bounds=bnds
-)
-if not opt.success:
-    raise RuntimeError("MLE optimization failed: " + opt.message)
-
-a_mle, b_mle, sigma_mle = opt.x
-print(
-    "MLE estimates: a = %.6g, b = %.6g, sigma = %.6g, fun-value = %.6g"
-    % (a_mle, b_mle, sigma_mle, opt.fun)
-)
+if __name__ == "__main__":
+    MLEFit()
