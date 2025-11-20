@@ -12,6 +12,7 @@ print(df.head())
 date_col = df.columns[0]
 rates_col = df.columns[1]
 
+#convert from string to datetime object
 df[date_col] = pd.to_datetime(df[date_col])
 
 print(df.dtypes)
@@ -30,9 +31,14 @@ df.set_index(keys=date_col,inplace=True)
 df = df.reindex(b_days, method="ffill")
 df.index.name = "date"
 
+print(df.head())
 # As we saw that the DGS10 values are given in percentage values, we want 
+
 # to convert them to their "proper" values:
 df[rates_col] /= 100.0
+
+#Round to 4 decimal places
+df[rates_col] = df[rates_col].round(4)
 
 # Rename DGS10 column for convenience
 df.rename(columns={"DGS10": "rate_pct"}, inplace=True)
