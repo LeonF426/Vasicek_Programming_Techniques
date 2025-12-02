@@ -39,7 +39,7 @@ it can be imported into other python files.
 
 
 def MLEFit(
-    path: str = "../data/DFF_clean.csv",
+    path: str = "../data/SR.csv",
     dt: float = 1 / 252,
     start=np.array([0.2, None, 0.2]),
     bounds: list = [
@@ -99,3 +99,4 @@ def MLEFit(
 if __name__ == "__main__":
     MLEFit(path="../data/SOFR_clean.csv")
     MLEFit(path="../data/DFF_clean.csv")
+    MLEFit(path="../data/SR.csv")
