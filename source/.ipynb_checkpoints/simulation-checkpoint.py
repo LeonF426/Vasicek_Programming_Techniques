@@ -13,12 +13,11 @@ def VasicekNormal(
     b: float = 0.0172119,
     sigma: float = 0.0122468,
     delta: float = 1.0 / 250,
-) -> tuple[float, float, float]:
+) -> float:
     """This function takes a random number (more efficient if simulated before, standard normal distribution)
     and transforms it into the next r_(t+1) given r_t (current_r). Since this is a normal distribution as well as shown in the MLE_Fit notebook
     or the report pdf, we can just transform a N(0,1) variable into N(mu, sigma^2) by scaling and translation. The formulas for this are
-    according to the report as mentioned. This will be applied for entire arrays even though it only takes single values (made possible by numpy!).
-    """
+    according to the report as mentioned. This will be applied for entire arrays even though it only takes single values (made possible by numpy!)."""
 
     # Factor that is used often -> more efficient to compute only once
     nu = np.exp(-a * delta)
@@ -53,7 +52,7 @@ def SimulateProcess(
 
     # Initialize a generator that we can call for random numbers. Thats why VasicekNormal already takes a random number!
     #   If we would define this inside the function we would re-initialize in a for loop and throw it away after only generating one number:
-    #     --> too slow, we call it ONCE and generate the values ahead of time. This only works exactly like this in our case because of the nice
+    #     --> too slow, we call it ONCE and generate the values ahead of time. This only works exactly like this in our case because of the nice 
     #         behaviour of a neat transition density!
     ran = np.random.default_rng()
 
@@ -94,9 +93,7 @@ def SimulateTrajectories(
     delta = T / n
 
     # Same as before but we dont want the mean and variances
-    r = np.zeros(
-        shape=(n, paths)
-    )  # (r_t)_{0<=t<=T} trajectory for each column, paths-many columns of iid trajectories
+    r = np.zeros(shape=(n, paths))  # (r_t)_{0<=t<=T} trajectory for each column, paths-many columns of iid trajectories
 
     # Same as before adjusted to how many paths/trajectories we want to simulate:
     ran = np.random.default_rng()
