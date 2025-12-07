@@ -35,19 +35,17 @@ In contrast to the jupyter notebook, we will wrap the remaining functionalities 
 it can be imported into other python files. 
 """
 
-# TODO: include procedure to find good starting values!
-
 
 def MLEFit(
-    path: str = "../data/SR.csv",
+    path: str = "../data/processed/SR.csv",
     dt: float = 1 / 252,
-    start=np.array([0.2, None, 0.2]),
+    start=np.array([0.5, None, 0.5]),
     bounds: list = [
         (1e-9, 1),  # bounds for a --> a > 0
         (-1, 1),  # bounds for b --> unconstrained
         (1e-9, 1),  # bounds for sigma --> sigma > 0
     ],
-):
+) -> tuple[float, float, float, float]:
     """
     This function has the exact same funcitonalities as the code shown in the MLE_Fit.ipynb notebook.
     We just wrap it into a function such that it can be imported in other python files. We set the values we use
@@ -57,14 +55,14 @@ def MLEFit(
     data = pd.read_csv(filepath_or_buffer=path, index_col="date")
 
     # Print first 10 rows to take a look:
-    print(data.head(10))
+    # print(data.head(10))
 
     # define day-delta on the basis of which we will simulate the SDE dynamics (discretization step assumed to be average business day per year):
     # dt = 1 / 252 HERE NOW AS INPUT!
 
     # Extract the values of the 'data' Dataframe into an array (DataFrame method returns np.array)
     r = data.values
-    print(type(r))
+    # print(type(r))
 
     # # Some starting parameters
     # start = np.array([1, 1, 1]) HERE NOW AS INPUT!
@@ -97,6 +95,6 @@ def MLEFit(
 
 
 if __name__ == "__main__":
-    MLEFit(path="../data/SOFR_clean.csv")
-    MLEFit(path="../data/DFF_clean.csv")
-    MLEFit(path="../data/SR.csv")
+    MLEFit(path="../data/processed/SOFR_clean.csv")
+    MLEFit(path="../data/processed/DFF_clean.csv")
+    MLEFit(path="../data/processed/SR.csv")

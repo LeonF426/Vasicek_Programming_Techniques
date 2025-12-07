@@ -5,7 +5,7 @@ import pandas as pd
 
 
 def DataCleanup(
-    filename: str = "../data/DFF.csv", print_statements: bool = True
+    filename: str = "../data/raw/DFF.csv", print_statements: bool = True
 ) -> None:
 
     # Read in raw data:
@@ -71,10 +71,10 @@ def DataCleanup(
 def JoinData() -> None:
     try:
         df_DFF = pd.read_csv(
-            filepath_or_buffer="../data/DFF_clean.csv", index_col="date"
+            filepath_or_buffer="../data/processed/DFF_clean.csv", index_col="date"
         )
         df_SOFR = pd.read_csv(
-            filepath_or_buffer="../data/SOFR_clean.csv", index_col="date"
+            filepath_or_buffer="../data/processed/SOFR_clean.csv", index_col="date"
         )
     except (
         IOError
@@ -100,10 +100,10 @@ def JoinData() -> None:
     # directory than source. In that case .to_csv can not save in ../data since that directory does not exist
     # so as a solution to not interrupt the program, we save it in the directory this code is ran from.
     try:
-        df_sr.to_csv(path_or_buf="../data/SR.csv")
+        df_sr.to_csv(path_or_buf="../data/processed/SR.csv")
     except IOError:
         print(f"No 'data' directory in parent directory, saving in ./data/ instead.")
-        df_sr.to_csv(path_or_buf="./data/SR.csv")
+        df_sr.to_csv(path_or_buf="./data/processed/SR.csv")
     return None
 
 

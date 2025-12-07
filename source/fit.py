@@ -35,11 +35,9 @@ In contrast to the jupyter notebook, we will wrap the remaining functionalities 
 it can be imported into other python files. 
 """
 
-# TODO: include procedure to find good starting values!
-
 
 def MLEFit(
-    path: str = "../data/SR.csv",
+    path: str = "../data/processed/SR.csv",
     dt: float = 1 / 252,
     start=np.array([0.5, None, 0.5]),
     bounds: list = [
@@ -97,6 +95,6 @@ def MLEFit(
 
 
 if __name__ == "__main__":
-    MLEFit(path="../data/SOFR_clean.csv")
-    MLEFit(path="../data/DFF_clean.csv")
-    MLEFit(path="../data/SR.csv")
+    MLEFit(path="../data/processed/SOFR_clean.csv")
+    MLEFit(path="../data/processed/DFF_clean.csv")
+    MLEFit(path="../data/processed/SR.csv")

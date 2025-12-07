@@ -5,7 +5,7 @@ import pandas as pd
 
 
 def DataCleanup(
-    filename: str = "../data/DFF.csv", print_statements: bool = True
+    filename: str = "../data/raw/DFF.csv", print_statements: bool = True
 ) -> None:
 
     # Read in raw data:
@@ -55,12 +55,58 @@ def DataCleanup(
     print(
         f"The cleaned dataset {short_rate_name}_clean.csv has been saved at: \n {path+"/"+short_rate_name}_clean.csv \n"
     )
-    # Save as cleaned dataset csv format:
-    df.to_csv(path_or_buf=f"{path+"/"+short_rate_name}_clean.csv")
+    # Save as cleaned dataset csv format, except IOError (may happen when this file is called from another
+    # directory than source. In that case .to_csv can not save in ../data since that directory does not exist
+    # so as a solution to not interrupt the program, we save it in the directory this code is ran from.
+    try:
+        df.to_csv(path_or_buf=f"{path+"/"+short_rate_name}_clean.csv")
+    except IOError:
+        print(
+            f"Can't access {path+"/"}, saving instead in directory where code has been called from."
+        )
+        df.to_csv(path_or_buf=f"{short_rate_name}_clean.csv")
+    return None
 
+
+def JoinData() -> None:
+    try:
+        df_DFF = pd.read_csv(
+            filepath_or_buffer="../data/processed/DFF_clean.csv", index_col="date"
+        )
+        df_SOFR = pd.read_csv(
+            filepath_or_buffer="../data/processed/SOFR_clean.csv", index_col="date"
+        )
+    except (
+        IOError
+    ):  # This is for when we call thsi function from main.py, since there is no parent directory
+        #           that has the data directory
+        df_DFF = pd.read_csv(
+            filepath_or_buffer="./data/DFF_clean.csv", index_col="date"
+        )
+        df_SOFR = pd.read_csv(
+            filepath_or_buffer="./data/SOFR_clean.csv", index_col="date"
+        )
+
+    df_DFF.index = pd.to_datetime(df_DFF.index)
+    df_SOFR.index = pd.to_datetime(df_SOFR.index)
+
+    sofr_date = df_SOFR.index[0]
+    condition = df_DFF.index < sofr_date
+    df_DFF = df_DFF.loc[condition,]
+
+    df_sr = pd.concat([df_DFF, df_SOFR], axis=0)
+
+    # Save as cleaned dataset csv format, except IOError (may happen when this file is called from another
+    # directory than source. In that case .to_csv can not save in ../data since that directory does not exist
+    # so as a solution to not interrupt the program, we save it in the directory this code is ran from.
+    try:
+        df_sr.to_csv(path_or_buf="../data/processed/SR.csv")
+    except IOError:
+        print(f"No 'data' directory in parent directory, saving in ./data/ instead.")
+        df_sr.to_csv(path_or_buf="./data/processed/SR.csv")
     return None
 
 
 if __name__ == "__main__":
     # This only runs if we run this file explicitly! If we import data_cleaning.py this will not be called!
-    DataCleanup()
+    JoinData()

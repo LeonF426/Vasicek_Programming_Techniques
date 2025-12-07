@@ -82,14 +82,16 @@ def SimulateProcess(
 
 
 def SimulateTrajectories(
-    a: float = 0.3213874,
-    b: float = 0.0172119,
-    sigma: float = 0.0122468,
+    a: float = 0.294484,
+    b: float = 0.0179596,
+    sigma: float = 0.0148037,
     T: float = 1.0,
     n: int = 250,
     paths=10,
 ) -> pd.DataFrame:
 
+    # (combined SR data fitted parameters set as default)
+    
     # Same as before:
     delta = T / n
 
@@ -117,22 +119,3 @@ def SimulateTrajectories(
 
     r = pd.DataFrame(r)
     return r
-
-
-def PlotVasicek():
-
-    r = SimulateTrajectories()
-
-    plt.figure(figsize=(12, 5))
-    plt.plot(r, label="Vasicek Trajectories")
-    plt.xlabel("t")
-    plt.ylabel("r_t")
-    plt.title("Vasicek Trajectories")
-    plt.grid(True)
-    plt.savefig("vasicek_trajectories.png")
-
-    return None
-
-
-if __name__ == "__main__":
-    PlotVasicek()
